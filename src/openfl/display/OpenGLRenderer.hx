@@ -7,6 +7,7 @@ import openfl.display._internal.Context3DDisplayObject;
 import openfl.display._internal.Context3DDisplayObjectContainer;
 import openfl.display._internal.Context3DGraphics;
 import openfl.display._internal.Context3DMaskShader;
+import openfl.display._internal.Context3DNativeRenderable;
 import openfl.display._internal.Context3DSimpleButton;
 import openfl.display._internal.Context3DTextField;
 import openfl.display._internal.Context3DTilemap;
@@ -36,6 +37,7 @@ import lime.math.Matrix4;
 #end
 @:access(lime.graphics.GLRenderContext)
 @:access(openfl.display._internal.ShaderBuffer)
+@:access(openfl.display3D._internal.Context3DState)
 @:access(openfl.display3D.Context3D)
 @:access(openfl.display.BitmapData)
 @:access(openfl.display.DisplayObject)
@@ -918,6 +920,36 @@ class OpenGLRenderer extends DisplayObjectRenderer
 				Context3DTilemap.renderDrawableMask(cast object, this);
 			default:
 		}
+	}
+
+	@:noCompletion private function __renderNativeOpenGL(displayObject:DisplayObject, renderable:Context3DNativeRenderable):Void
+	{
+		if (!displayObject.__renderable || displayObject.__worldAlpha <= 0) return;
+		if (!__cleared) __clear();
+
+		__setBlendMode(displayObject.__worldBlendMode);
+		__pushMaskObject(displayObject);
+		setShader(null);
+		__context3D.__flushGL();
+
+		renderable.__renderOpenGL(this, displayObject.__renderTransform, displayObject.__worldColorTransform, 0);
+
+		__invalidateGLCacheAfterNativeRender();
+		__popMaskObject(displayObject);
+		setViewport();
+		__context3D.__flushGL();
+	}
+
+	@:noCompletion private function __invalidateGLCacheAfterNativeRender():Void
+	{
+		var state = __context3D.__contextState;
+		state.__currentGLArrayBuffer = null;
+		state.__currentGLElementArrayBuffer = null;
+		state.__currentGLFramebuffer = null;
+		state.__currentGLTexture2D = null;
+		state.__currentGLTextureCubeMap = null;
+		state.program = null;
+		state.shader = null;
 	}
 
 	@:noCompletion private function __renderFilterPass(source:BitmapData, shader:Shader, smooth:Bool, clear:Bool = true):Void

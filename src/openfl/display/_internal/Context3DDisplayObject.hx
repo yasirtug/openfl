@@ -4,6 +4,7 @@ package openfl.display._internal;
 import openfl.display3D.Context3DClearMask;
 import openfl.display.DisplayObject;
 import openfl.display.OpenGLRenderer;
+import openfl.display._internal.Context3DNativeRenderable;
 import openfl.geom.Rectangle;
 #if lime
 import lime.math.ARGB;
@@ -22,7 +23,8 @@ class Context3DDisplayObject
 {
 	public static inline function render(displayObject:DisplayObject, renderer:OpenGLRenderer):Void
 	{
-		if (displayObject.opaqueBackground == null && displayObject.__graphics == null) return;
+		var nativeRenderable:Context3DNativeRenderable = Std.isOfType(displayObject, Context3DNativeRenderable) ? cast displayObject : null;
+		if (displayObject.opaqueBackground == null && displayObject.__graphics == null && nativeRenderable == null) return;
 		if (!displayObject.__renderable || displayObject.__worldAlpha <= 0) return;
 
 		if (displayObject.opaqueBackground != null
@@ -53,6 +55,11 @@ class Context3DDisplayObject
 		if (displayObject.__graphics != null)
 		{
 			Context3DShape.render(displayObject, renderer);
+		}
+
+		if (nativeRenderable != null)
+		{
+			renderer.__renderNativeOpenGL(displayObject, nativeRenderable);
 		}
 	}
 
