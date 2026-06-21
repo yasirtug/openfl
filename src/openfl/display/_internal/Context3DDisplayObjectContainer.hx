@@ -46,6 +46,10 @@ class Context3DDisplayObjectContainer
 		if (displayObjectContainer.__children.length > 0)
 		{
 			// renderer.filterManager.popObject (this);
+			if (displayObjectContainer.__mask != null || displayObjectContainer.__scrollRect != null)
+			{
+				renderer.__flushNativeOpenGL();
+			}
 			renderer.__popMaskObject(displayObjectContainer);
 		}
 	}

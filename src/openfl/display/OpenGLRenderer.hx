@@ -95,6 +95,7 @@ class OpenGLRenderer extends DisplayObjectRenderer
 	@:noCompletion private var __maskShader:Context3DMaskShader;
 	@SuppressWarnings("checkstyle:Dynamic") @:noCompletion private var __matrix:#if lime Matrix4 #else Dynamic #end;
 	@:noCompletion private var __maskObjects:Array<DisplayObject>;
+	@:noCompletion private var __nativeOpenGLBatchRenderable:Context3DNativeRenderable;
 	@:noCompletion private var __numClipRects:Int;
 	@:noCompletion private var __offsetX:Int;
 	@:noCompletion private var __offsetY:Int;
@@ -782,7 +783,9 @@ class OpenGLRenderer extends DisplayObjectRenderer
 
 			__upscaled = (__worldTransform.a != 1 || __worldTransform.d != 1);
 
+
 			__renderDrawable(object);
+			__flushNativeOpenGL();
 
 			// TODO: Handle this in Context3D as a viewport?
 
@@ -861,7 +864,9 @@ class OpenGLRenderer extends DisplayObjectRenderer
 			object.__mask = null;
 			object.__scrollRect = null;
 
+
 			__renderDrawable(object);
+			__flushNativeOpenGL();
 
 			object.__mask = cacheMask;
 			object.__scrollRect = cacheScrollRect;
@@ -873,6 +878,13 @@ class OpenGLRenderer extends DisplayObjectRenderer
 	@:noCompletion private function __renderDrawable(object:IBitmapDrawable):Void
 	{
 		if (object == null) return;
+
+		var displayObject:DisplayObject = Std.isOfType(object, DisplayObject) ? cast object : null;
+		var nativeRenderable:Context3DNativeRenderable = displayObject != null && Std.isOfType(displayObject, Context3DNativeRenderable) ? cast displayObject : null;
+		if (nativeRenderable == null && displayObject != null && displayObject.__renderable && displayObject.__worldAlpha > 0)
+		{
+			__flushNativeOpenGL();
+		}
 
 		switch (object.__drawableType)
 		{
@@ -927,15 +939,43 @@ class OpenGLRenderer extends DisplayObjectRenderer
 		if (!displayObject.__renderable || displayObject.__worldAlpha <= 0) return;
 		if (!__cleared) __clear();
 
-		__setBlendMode(displayObject.__worldBlendMode);
-		__pushMaskObject(displayObject);
-		setShader(null);
-		__context3D.__flushGL();
+		if (displayObject.__mask != null || displayObject.__scrollRect != null || __maskObjects.length > 0)
+		{
+			__flushNativeOpenGL();
+			__setBlendMode(displayObject.__worldBlendMode);
+			__pushMaskObject(displayObject);
+			setShader(null);
+			__context3D.__flushGL();
+
+			__nativeOpenGLBatchRenderable = renderable;
+			renderable.__renderOpenGL(this, displayObject.__renderTransform, displayObject.__worldColorTransform, 0);
+			__flushNativeOpenGL();
+
+			__invalidateGLCacheAfterNativeRender();
+			__popMaskObject(displayObject);
+			setViewport();
+			__context3D.__flushGL();
+			return;
+		}
+
+		if (__nativeOpenGLBatchRenderable == null)
+		{
+			__nativeOpenGLBatchRenderable = renderable;
+			__setBlendMode(displayObject.__worldBlendMode);
+			setShader(null);
+			__context3D.__flushGL();
+		}
 
 		renderable.__renderOpenGL(this, displayObject.__renderTransform, displayObject.__worldColorTransform, 0);
+	}
 
+	@:noCompletion private function __flushNativeOpenGL():Void
+	{
+		if (__nativeOpenGLBatchRenderable == null) return;
+
+		__nativeOpenGLBatchRenderable.__flushOpenGL(this);
+		__nativeOpenGLBatchRenderable = null;
 		__invalidateGLCacheAfterNativeRender();
-		__popMaskObject(displayObject);
 		setViewport();
 		__context3D.__flushGL();
 	}
