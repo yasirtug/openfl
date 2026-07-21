@@ -13,6 +13,7 @@ interface Context3DNativeRenderable
 {
 	@:noCompletion public function __renderOpenGL(renderer:OpenGLRenderer, objectMatrix:Matrix, objectColorTransform:ColorTransform,
 		openflFramebuffer:Int):Void;
+	@:noCompletion public function __nativeOpenGLBatchKey():Dynamic;
 	@:noCompletion public function __flushOpenGL(renderer:OpenGLRenderer):Void;
 }
 #end

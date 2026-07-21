@@ -96,6 +96,7 @@ class OpenGLRenderer extends DisplayObjectRenderer
 	@SuppressWarnings("checkstyle:Dynamic") @:noCompletion private var __matrix:#if lime Matrix4 #else Dynamic #end;
 	@:noCompletion private var __maskObjects:Array<DisplayObject>;
 	@:noCompletion private var __nativeOpenGLBatchRenderable:Context3DNativeRenderable;
+	@:noCompletion private var __nativeOpenGLBatchKey:Dynamic;
 	@:noCompletion private var __numClipRects:Int;
 	@:noCompletion private var __offsetX:Int;
 	@:noCompletion private var __offsetY:Int;
@@ -939,6 +940,12 @@ class OpenGLRenderer extends DisplayObjectRenderer
 		if (!displayObject.__renderable || displayObject.__worldAlpha <= 0) return;
 		if (!__cleared) __clear();
 
+		var batchKey = renderable.__nativeOpenGLBatchKey();
+		if (__nativeOpenGLBatchRenderable != null && __nativeOpenGLBatchKey != batchKey)
+		{
+			__flushNativeOpenGL();
+		}
+
 		if (displayObject.__mask != null || displayObject.__scrollRect != null || __maskObjects.length > 0)
 		{
 			__flushNativeOpenGL();
@@ -948,6 +955,7 @@ class OpenGLRenderer extends DisplayObjectRenderer
 			__context3D.__flushGL();
 
 			__nativeOpenGLBatchRenderable = renderable;
+			__nativeOpenGLBatchKey = batchKey;
 			renderable.__renderOpenGL(this, displayObject.__renderTransform, displayObject.__worldColorTransform, 0);
 			__flushNativeOpenGL();
 
@@ -961,6 +969,7 @@ class OpenGLRenderer extends DisplayObjectRenderer
 		if (__nativeOpenGLBatchRenderable == null)
 		{
 			__nativeOpenGLBatchRenderable = renderable;
+			__nativeOpenGLBatchKey = batchKey;
 			__setBlendMode(displayObject.__worldBlendMode);
 			setShader(null);
 			__context3D.__flushGL();
@@ -975,6 +984,7 @@ class OpenGLRenderer extends DisplayObjectRenderer
 
 		__nativeOpenGLBatchRenderable.__flushOpenGL(this);
 		__nativeOpenGLBatchRenderable = null;
+		__nativeOpenGLBatchKey = null;
 		__invalidateGLCacheAfterNativeRender();
 		setViewport();
 		__context3D.__flushGL();
