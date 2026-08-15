@@ -12,7 +12,7 @@ import openfl.geom.Matrix;
 interface Context3DNativeRenderable
 {
 	@:noCompletion public function __renderOpenGL(renderer:OpenGLRenderer, objectMatrix:Matrix, objectColorTransform:ColorTransform,
-		openflFramebuffer:Int):Void;
+		openflFramebuffer:Int, renderScale:Float):Void;
 	@:noCompletion public function __nativeOpenGLBatchKey():Dynamic;
 	@:noCompletion public function __flushOpenGL(renderer:OpenGLRenderer):Void;
 }

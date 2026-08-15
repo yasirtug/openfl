@@ -542,11 +542,12 @@ class OpenGLRenderer extends DisplayObjectRenderer
 	{
 		if (shader != null)
 		{
-			// TODO: Change of GL context?
 
-			if (shader.__context == null)
+			if (shader.__context != __context3D)
 			{
 				shader.__context = __context3D;
+				shader.program = null;
+				shader.glProgram = null;
 				shader.__init();
 			}
 
@@ -561,11 +562,12 @@ class OpenGLRenderer extends DisplayObjectRenderer
 	{
 		if (shader != null)
 		{
-			// TODO: Change of GL context?
 
-			if (shader.__context == null)
+			if (shader.__context != __context3D)
 			{
 				shader.__context = __context3D;
+				shader.program = null;
+				shader.glProgram = null;
 				shader.__init();
 			}
 
@@ -580,11 +582,12 @@ class OpenGLRenderer extends DisplayObjectRenderer
 	{
 		if (shader != null)
 		{
-			// TODO: Change of GL context?
 
-			if (shader.__context == null)
+			if (shader.__context != __context3D)
 			{
 				shader.__context = __context3D;
+				shader.program = null;
+				shader.glProgram = null;
 				shader.__init();
 			}
 
@@ -956,7 +959,7 @@ class OpenGLRenderer extends DisplayObjectRenderer
 
 			__nativeOpenGLBatchRenderable = renderable;
 			__nativeOpenGLBatchKey = batchKey;
-			renderable.__renderOpenGL(this, displayObject.__renderTransform, displayObject.__worldColorTransform, 0);
+			renderable.__renderOpenGL(this, displayObject.__renderTransform, displayObject.__worldColorTransform, 0, __pixelRatio);
 			__flushNativeOpenGL();
 
 			__invalidateGLCacheAfterNativeRender();
@@ -975,7 +978,7 @@ class OpenGLRenderer extends DisplayObjectRenderer
 			__context3D.__flushGL();
 		}
 
-		renderable.__renderOpenGL(this, displayObject.__renderTransform, displayObject.__worldColorTransform, 0);
+		renderable.__renderOpenGL(this, displayObject.__renderTransform, displayObject.__worldColorTransform, 0, __pixelRatio);
 	}
 
 	@:noCompletion private function __flushNativeOpenGL():Void
