@@ -97,6 +97,7 @@ class OpenGLRenderer extends DisplayObjectRenderer
 	@:noCompletion private var __maskObjects:Array<DisplayObject>;
 	@:noCompletion private var __nativeOpenGLBatchRenderable:Context3DNativeRenderable;
 	@:noCompletion private var __nativeOpenGLBatchKey:Dynamic;
+	@:noCompletion private var __nativeOpenGLBatchBlendMode:BlendMode;
 	@:noCompletion private var __numClipRects:Int;
 	@:noCompletion private var __offsetX:Int;
 	@:noCompletion private var __offsetY:Int;
@@ -885,7 +886,8 @@ class OpenGLRenderer extends DisplayObjectRenderer
 
 		var displayObject:DisplayObject = Std.isOfType(object, DisplayObject) ? cast object : null;
 		var nativeRenderable:Context3DNativeRenderable = displayObject != null && Std.isOfType(displayObject, Context3DNativeRenderable) ? cast displayObject : null;
-		if (nativeRenderable == null && displayObject != null && displayObject.__renderable && displayObject.__worldAlpha > 0)
+		if (nativeRenderable == null && displayObject != null && displayObject.__renderable && displayObject.__worldAlpha > 0
+			&& __breaksNativeOpenGLBatch(displayObject))
 		{
 			__flushNativeOpenGL();
 		}
@@ -910,6 +912,28 @@ class OpenGLRenderer extends DisplayObjectRenderer
 				Context3DTilemap.renderDrawable(cast object, this);
 			default:
 		}
+	}
+
+	// A compatible native draw is queued instead of issued immediately, so anything drawn
+	// or any GL state change in between has to break the batch first. A plain transform
+	// container draws nothing of its own, so ordinary Sprite nesting must not interrupt
+	// contiguous native draws; its drawing children still break the batch individually.
+	@:noCompletion private function __breaksNativeOpenGLBatch(displayObject:DisplayObject):Bool
+	{
+		switch (displayObject.__drawableType)
+		{
+			case SPRITE, STAGE:
+			default:
+				return true;
+		}
+
+		return displayObject.__graphics != null
+			|| displayObject.opaqueBackground != null
+			|| displayObject.__cacheBitmap != null
+			|| displayObject.cacheAsBitmap
+			|| displayObject.__customRenderEvent != null
+			|| displayObject.__mask != null
+			|| displayObject.__scrollRect != null;
 	}
 
 	@:noCompletion private function __renderDrawableMask(object:IBitmapDrawable):Void
@@ -944,7 +968,8 @@ class OpenGLRenderer extends DisplayObjectRenderer
 		if (!__cleared) __clear();
 
 		var batchKey = renderable.__nativeOpenGLBatchKey();
-		if (__nativeOpenGLBatchRenderable != null && __nativeOpenGLBatchKey != batchKey)
+		if (__nativeOpenGLBatchRenderable != null
+			&& (__nativeOpenGLBatchKey != batchKey || __nativeOpenGLBatchBlendMode != displayObject.__worldBlendMode))
 		{
 			__flushNativeOpenGL();
 		}
@@ -959,6 +984,7 @@ class OpenGLRenderer extends DisplayObjectRenderer
 
 			__nativeOpenGLBatchRenderable = renderable;
 			__nativeOpenGLBatchKey = batchKey;
+			__nativeOpenGLBatchBlendMode = displayObject.__worldBlendMode;
 			renderable.__renderOpenGL(this, displayObject.__renderTransform, displayObject.__worldColorTransform, 0, __pixelRatio);
 			__flushNativeOpenGL();
 
@@ -973,6 +999,7 @@ class OpenGLRenderer extends DisplayObjectRenderer
 		{
 			__nativeOpenGLBatchRenderable = renderable;
 			__nativeOpenGLBatchKey = batchKey;
+			__nativeOpenGLBatchBlendMode = displayObject.__worldBlendMode;
 			__setBlendMode(displayObject.__worldBlendMode);
 			setShader(null);
 			__context3D.__flushGL();
@@ -988,6 +1015,7 @@ class OpenGLRenderer extends DisplayObjectRenderer
 		__nativeOpenGLBatchRenderable.__flushOpenGL(this);
 		__nativeOpenGLBatchRenderable = null;
 		__nativeOpenGLBatchKey = null;
+		__nativeOpenGLBatchBlendMode = null;
 		__invalidateGLCacheAfterNativeRender();
 		setViewport();
 		__context3D.__flushGL();
