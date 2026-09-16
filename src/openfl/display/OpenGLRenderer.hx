@@ -98,6 +98,7 @@ class OpenGLRenderer extends DisplayObjectRenderer
 	@:noCompletion private var __nativeOpenGLBatchRenderable:Context3DNativeRenderable;
 	@:noCompletion private var __nativeOpenGLBatchKey:Dynamic;
 	@:noCompletion private var __nativeOpenGLBatchBlendMode:BlendMode;
+	@:noCompletion private var __nativeOpenGLColorTransform:ColorTransform;
 	@:noCompletion private var __numClipRects:Int;
 	@:noCompletion private var __offsetX:Int;
 	@:noCompletion private var __offsetY:Int;
@@ -135,6 +136,7 @@ class OpenGLRenderer extends DisplayObjectRenderer
 		#end
 
 		__values = new Array();
+		__nativeOpenGLColorTransform = new ColorTransform();
 
 		#if gl_debug
 		var ext:KHR_debug = __gl.getExtension("KHR_debug");
@@ -967,6 +969,7 @@ class OpenGLRenderer extends DisplayObjectRenderer
 		if (!displayObject.__renderable || displayObject.__worldAlpha <= 0) return;
 		if (!__cleared) __clear();
 
+		var colorTransform = __nativeOpenGLColorTransformFor(displayObject);
 		var batchKey = renderable.__nativeOpenGLBatchKey();
 		if (__nativeOpenGLBatchRenderable != null
 			&& (__nativeOpenGLBatchKey != batchKey || __nativeOpenGLBatchBlendMode != displayObject.__worldBlendMode))
@@ -985,7 +988,7 @@ class OpenGLRenderer extends DisplayObjectRenderer
 			__nativeOpenGLBatchRenderable = renderable;
 			__nativeOpenGLBatchKey = batchKey;
 			__nativeOpenGLBatchBlendMode = displayObject.__worldBlendMode;
-			renderable.__renderOpenGL(this, displayObject.__renderTransform, displayObject.__worldColorTransform, 0, __pixelRatio);
+			renderable.__renderOpenGL(this, displayObject.__renderTransform, colorTransform, 0, __pixelRatio);
 			__flushNativeOpenGL();
 
 			__invalidateGLCacheAfterNativeRender();
@@ -1005,7 +1008,25 @@ class OpenGLRenderer extends DisplayObjectRenderer
 			__context3D.__flushGL();
 		}
 
-		renderable.__renderOpenGL(this, displayObject.__renderTransform, displayObject.__worldColorTransform, 0, __pixelRatio);
+		renderable.__renderOpenGL(this, displayObject.__renderTransform, colorTransform, 0, __pixelRatio);
+	}
+
+	// A native renderable applies its own alpha, and the transform OpenFL tracks on a display object
+	// carries only the explicit color transform: a plain `alpha` value lives in `__worldAlpha` and
+	// would never reach the renderable. The transform handed to the renderable therefore carries the
+	// same product `applyAlpha` applies, so a natively drawn object fades like any other. The shared
+	// instance is only written while a renderable is being called, which never nests.
+	@:noCompletion private function __nativeOpenGLColorTransformFor(displayObject:DisplayObject):ColorTransform
+	{
+		var alpha = displayObject.__worldAlpha * __worldAlpha;
+		if (alpha == 1)
+		{
+			return displayObject.__worldColorTransform;
+		}
+
+		__nativeOpenGLColorTransform.__copyFrom(displayObject.__worldColorTransform);
+		__nativeOpenGLColorTransform.alphaMultiplier *= alpha;
+		return __nativeOpenGLColorTransform;
 	}
 
 	@:noCompletion private function __flushNativeOpenGL():Void
