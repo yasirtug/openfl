@@ -1,6 +1,7 @@
 package openfl.display;
 
 #if !flash
+import openfl.display._internal.Context3DNativeRenderable;
 import openfl.display._internal.IBitmapDrawableType;
 import openfl.utils.ObjectPool;
 import openfl.utils._internal.Lib;
@@ -1021,6 +1022,7 @@ class DisplayObject extends EventDispatcher implements IBitmapDrawable #if (open
 	@:noCompletion private var __worldVisibleChanged:Bool;
 	@:noCompletion private var __worldTransformInvalid:Bool;
 	@:noCompletion private var __worldZ:Int;
+	@:noCompletion private var __nativeOpenGLRenderable:Context3DNativeRenderable;
 	#if (js && html5)
 	@:noCompletion private var __canvas:CanvasElement;
 	@:noCompletion private var __context:CanvasRenderingContext2D;
@@ -1128,6 +1130,8 @@ class DisplayObject extends EventDispatcher implements IBitmapDrawable #if (open
 		super();
 
 		__drawableType = DISPLAY_OBJECT;
+		// Interface membership is fixed for the lifetime of a display object.
+		__nativeOpenGLRenderable = Std.isOfType(this, Context3DNativeRenderable) ? cast this : null;
 
 		__alpha = 1;
 		__blendMode = NORMAL;

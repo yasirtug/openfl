@@ -886,8 +886,8 @@ class OpenGLRenderer extends DisplayObjectRenderer
 	{
 		if (object == null) return;
 
-		var displayObject:DisplayObject = Std.isOfType(object, DisplayObject) ? cast object : null;
-		var nativeRenderable:Context3DNativeRenderable = displayObject != null && Std.isOfType(displayObject, Context3DNativeRenderable) ? cast displayObject : null;
+		var displayObject:DisplayObject = object.__drawableType != BITMAP_DATA ? cast object : null;
+		var nativeRenderable = displayObject != null ? displayObject.__nativeOpenGLRenderable : null;
 		if (nativeRenderable == null && displayObject != null && displayObject.__renderable && displayObject.__worldAlpha > 0
 			&& __breaksNativeOpenGLBatch(displayObject))
 		{

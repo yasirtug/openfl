@@ -23,7 +23,7 @@ class Context3DDisplayObject
 {
 	public static inline function render(displayObject:DisplayObject, renderer:OpenGLRenderer):Void
 	{
-		var nativeRenderable:Context3DNativeRenderable = Std.isOfType(displayObject, Context3DNativeRenderable) ? cast displayObject : null;
+		var nativeRenderable:Context3DNativeRenderable = displayObject.__nativeOpenGLRenderable;
 		if (displayObject.opaqueBackground == null && displayObject.__graphics == null && nativeRenderable == null) return;
 		if (!displayObject.__renderable || displayObject.__worldAlpha <= 0) return;
 

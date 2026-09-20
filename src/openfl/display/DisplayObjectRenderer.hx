@@ -245,6 +245,16 @@ class DisplayObjectRenderer extends EventDispatcher
 		return false;
 		#end
 
+		// Uncached GL objects do not need color-transform preparation. Keep existing
+		// caches on the normal path so disabling cacheAsBitmap still releases them.
+		if (renderer.__type == OPENGL && !displayObject.cacheAsBitmap && displayObject.__cacheBitmap == null
+			#if (openfl_legacy_scale9grid && openfl_force_gl_cacheasbitmap_for_scale9grid)
+			&& displayObject.scale9Grid == null
+			#end)
+		{
+			return false;
+		}
+
 		var colorTransform = ColorTransform.__pool.get();
 		colorTransform.__copyFrom(displayObject.__worldColorTransform);
 		if (renderer.__worldColorTransform != null) colorTransform.__combine(renderer.__worldColorTransform);
