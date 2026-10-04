@@ -1052,6 +1052,39 @@ class OpenGLRenderer extends DisplayObjectRenderer
 		state.__currentGLTextureCubeMap = null;
 		state.program = null;
 		state.shader = null;
+		#if (js && html5)
+		// The WebAssembly bridge cannot put OpenFL's WebGL state back: Emscripten can only name the
+		// objects it created, and querying the rest stalls on the GPU. Forget every cached value
+		// instead, so the __flushGL that follows re-issues all of OpenFL's own state.
+		state.blendDestinationAlphaFactor = null;
+		state.blendSourceAlphaFactor = null;
+		state.blendDestinationRGBFactor = null;
+		state.blendSourceRGBFactor = null;
+		state.colorMaskRed = cast null;
+		state.colorMaskGreen = cast null;
+		state.colorMaskBlue = cast null;
+		state.colorMaskAlpha = cast null;
+		state.culling = null;
+		state.depthCompareMode = null;
+		state.depthMask = cast null;
+		state.scissorEnabled = cast null;
+		state.scissorRectangle.setTo(-1, -1, -1, -1);
+		state.stencilCompareMode = null;
+		state.stencilDepthFail = null;
+		state.stencilFail = null;
+		state.stencilPass = null;
+		state.stencilReadMask = cast null;
+		state.stencilReferenceValue = cast null;
+		state.stencilTriangleFace = null;
+		state.stencilWriteMask = cast null;
+		state.__enableGLBlend = cast null;
+		state.__enableGLCullFace = cast null;
+		state.__enableGLDepthTest = cast null;
+		state.__enableGLScissorTest = cast null;
+		state.__enableGLStencilTest = cast null;
+		state.__frontFaceGLCCW = cast null;
+		state.__glBlendEquation = -1;
+		#end
 	}
 
 	@:noCompletion private function __renderFilterPass(source:BitmapData, shader:Shader, smooth:Bool, clear:Bool = true):Void
