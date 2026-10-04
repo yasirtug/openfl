@@ -992,6 +992,15 @@ class DisplayObjectContainer extends InteractiveObject
 		{
 			for (child in __children)
 			{
+				// A hidden subtree renders nothing, so the per-frame render update skips it. Its
+				// world transforms stay valid on demand (__getWorldTransform recomputes when
+				// invalidated), and showing it marks it dirty so the next frame updates it fully.
+				// Transform-only updates (bounds, hit tests) still visit every child.
+				if (!transformOnly && !child.__visible && !child.__isMask)
+				{
+					child.__renderable = false;
+					continue;
+				}
 				child.__update(transformOnly, true);
 			}
 		}
